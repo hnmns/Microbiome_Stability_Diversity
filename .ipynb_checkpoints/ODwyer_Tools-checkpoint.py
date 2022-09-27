@@ -78,8 +78,8 @@ def R_star_gen(C_,P_,eps_,mu_): # P_ is actually 3-dimensional matrix (k nxn sub
     # print('mu:',mu.shape)
     # print('k:',k_)
     # print('n:',n_)
-    v_ = np.sum(np.transpose(P_,(0,2,1)), 2).reshape(k_,n_,1) + mu_.reshape(1,n_,1) #take row sums of P_ transpose, reshape to add 
-    #v = np.sum(np.transpose(P_,(0,2,1)), 2).reshape(k_,n_,1) + mu_
+    v_ = np.sum(np.transpose(P_,(0,2,1)), 2).reshape(k_,n_,1) + mu_.reshape(-1,n_,1) #take row sums of P_ transpose, reshape to add 
+    # Please do not blow up because mu_ is reshaped with a -1 now.
     
     R_star_ = np.tensordot(A_,v_,axes=([1],[1]))
     R_star_ = R_star_.reshape(n_,k_).T.reshape(k_,n_,1)
@@ -114,7 +114,12 @@ def R_star_gen(C_,P_,eps_,mu_): # P_ is actually 3-dimensional matrix (k nxn sub
 #     return R_star
 
 # $\vec{S^*} = [(R^{*}_{diag})C - P]^{-1} \vec{\rho}$
-
+def dot_across(A, x): # Wow, x can be vectors OR more matrices
+    k_ = A.shape[0]
+    n_ = A.shape[1]
+    DI_k = np.diag_indices(k_)[0]
+    prod = np.dot(A,x.reshape(k_,n_,-1)) # Do a better check for dimensions, doofus.
+    return prod[DI_k,:,DI_k,:]
 
 def S_star_gen(C_,P_,R_star_,rho_):
     k_ = P_.shape[0]
@@ -129,7 +134,10 @@ def S_star_gen(C_,P_,R_star_,rho_):
     A_ = np.linalg.inv(RC - P_) # "Subtract across" RC and P
     
     # This time, we have many different sub-A right-multiplied by constant vector rho
-    S_star_ = np.dot(A_, rho_)
+    if rho_.ndim == 2:
+        S_star_ = np.dot(A_, rho_)
+    else:
+        S_star_ = dot_across(A_, rho_)
     
     return S_star_.reshape(k_,n_,1)
 
