@@ -63,6 +63,8 @@ def stoch_invar(A):
     
     return SI
 
+
+
 def init_res(A):
     
     if A.ndim == 2:  # to account for when passing a single community matrix A, shape (2*n,2*n)
@@ -71,7 +73,7 @@ def init_res(A):
     
     temp = A + np.transpose(A, (0,2,1)) # symmetric matrices have real eigvals
     
-    dom_evs = dom_eigvals(temp)
+    dom_evs = dom_eigvals(temp).real
     
     R0 = -0.5* dom_evs
     
