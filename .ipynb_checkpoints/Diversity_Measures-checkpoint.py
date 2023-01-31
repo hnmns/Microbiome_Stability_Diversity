@@ -21,6 +21,8 @@ def normalize(N):
     return N
 
 def sum_to_one(N):
+    if np.all(N==0):
+        return N
     if N.ndim == 2:
         N = N.reshape(1,N.shape[0],N.shape[1])
     return N/np.sum(N,1).reshape(N.shape[0],1,1)
