@@ -1,5 +1,3 @@
-
-
 # ## Jost    
 # All diversity index functions below will take equilibrium vector $N$ and return raw index, not the numbers equivalent.
 

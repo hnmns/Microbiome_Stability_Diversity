@@ -4,6 +4,9 @@ from numpy.random import normal, uniform
 from numpy.linalg import eigvals
 import math as mt
 
+from Arnoldi_Tools import *
+from Diversity_Measures import *
+
 ## Asymmetric P matrix ##
 def asymP(sig, n):
 
@@ -464,4 +467,96 @@ def OD_stab_div_plot(OD_, div_idx_=list(range(6)), fsize=(7,6), res = 250, fonts
     
     if (save_as != None):
         plt.savefig(save_as+'.{}'.format(img_type), format=img_type)
+        
+        
+        
+        
+
+####### No Resource Production ########
+        
+def dot_across(A, x): # Overkill, slower than for-looping, really.
+    k_ = A.shape[0]
+    n_ = A.shape[1]
+    DI_k = np.diag_indices(k_)[0]
+    prod = np.dot(A,x.reshape(k_,n_,-1)) 
+    return prod[DI_k,:,DI_k,:]
+
+def mu_gen(eps_, C_, R_star_):
+    n_ = C_.shape[-1]
+
+    lhs = np.dot(eps_*np.eye(n_), C_)
+    return np.transpose(np.dot(lhs, R_star_), (1,0,2))
+
+def rho_gen(R_star_, C_, S_star_):
+    k_ = R_star_.shape[0]
+    n_ = C_.shape[-1]
+    diag_idx = np.diag_indices(n_)[0]
+    R_diag = np.zeros((k_,n_,n_))
+    R_diag[:, diag_idx, diag_idx] = R_star_.reshape(k_, -1)
+    
+    lhs = np.dot(R_diag, C_)
+    
+    return dot_across(lhs, S_star_)
+
+class ODsystem_noP:
+    '''
+    O'Dwyer systems + their community matrices and equilibria + Arnoldi Measures.
+    VERY slow when n>~6, quadratic time from needing to for-loop I_S and I_D.
+    -------------------------------------------------------
+    Specify:
+    k, number of systems
+    n, number of species and number of resources
+    R_star_bounds, resource equilibria random unif bounds (DEFUNCT, Need to sum to 1 anyway bc densities!!!)
+    S_star_bounds, species equilibria random unif bounds
+    eps, resource consumers' conversion efficiency of biomass
+    sig_P, standard deviation of entries in production matrix P
+    C, consumption matrix
+    '''
+    def __init__(self, k_=1000,n_=5, R_star_bounds=(1,2), S_star_bounds=(10,20), eps_=0.25, C_ = None, seed_=667):
+        self.k = k_
+        self.n = n_
+        self.eps = eps_
+        self.seed = seed_
+        np.random.seed(self.seed)
+        
+        # self.R_star = np.random.uniform(R_star_bounds[0], R_star_bounds[1], (k_,n_,1))
+        self.R_star = np.random.uniform(0,1, (k_,n_,1))
+        self.R_star = self.R_star / np.sum(self.R_star, axis=1).reshape(self.k,1,1)
+        # self.S_star = np.random.uniform(S_star_bounds[0], S_star_bounds[1], (k_,n_,1))
+        self.S_star = np.random.uniform(0,1, (k_,n_,1))
+        self.S_star = self.S_star / np.sum(self.S_star, axis=1).reshape(self.k,1,1)
+        
+        if C_ is None:
+            self.C = np.identity(self.n)
+        else:
+            self.C = C_
+        
+        self.mu = mu_gen(self.eps, self.C, self.R_star)
+        self.rho = rho_gen(self.R_star, self.C, self.S_star)
+            
+        self.J = community_matr_gen_noP(self.n, self.k, self.C,self.eps,self.R_star,self.S_star)
+        
+        
+        ### Arnoldi Measures ###
+        self.R_0 = init_res(self.J)
+        self.R_inf = asym_res(self.J)
+        self.I_S = np.zeros(self.k)
+        for i in range(self.k):
+            self.I_S[i] = stoch_invar(self.J[i,:,:])
+            
+        self.I_D = np.zeros(self.k)
+        for i in range(self.k):
+            self.I_D[i] = -1/minimize_scalar(determ_invar_OBJ, bracket = (0,3), args=(self.J[i,:,:]), method='brent').fun
+
+            
+        ### Diversity Measures ###
+        self.s_star = sum_to_one(self.S_star)
+        self.r_star = sum_to_one(self.R_star)
+
+        self.simpson_s = simpson_conc(self.s_star)
+        self.shannon_s = shannon_entropy(self.s_star)
+        self.gini_simp_s = gini_simpson_index(self.s_star)
+        self.hcdt_entropy_s = hcdt_entropy(self.s_star, q=2)
+        self.renyi_entropy_s = renyi_entropy(self.s_star, q=2)
+        self.D_s = 1/(1-self.gini_simp_s)
         
