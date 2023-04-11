@@ -59,6 +59,14 @@ def renyi_entropy(N, q=2):
         return shannon_entropy(p) 
     else:
         return -np.log(np.sum(np.power(p,q), 1)) / (q-1)
+    
+    
+def D_1(p):
+    if p.ndim == 1:
+        p = p.reshape(1,p.size,1)
+
+    return np.exp(- np.sum(p*np.log(p), axis=1))
+
 
 # Universal numbers equivalent
 def numbers_equiv_alpha(w,p,q):

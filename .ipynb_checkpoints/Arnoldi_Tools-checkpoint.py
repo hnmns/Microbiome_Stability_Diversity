@@ -1,6 +1,34 @@
 from numpy.linalg import eigvals
 import numpy as np
+import scipy as sp # for matrix exponential
+from scipy.linalg import expm
 
+### Arnoldi  "How ecosystems recover..." ###
+# Arnoldi Appendix E suggests def'n v with v_i std Gaussian, then normalize to u. Why Gaussian?? 
+def u_gen_unif(n):
+    '''
+    Generate uniformly distributed unit-length  perturbation vector u.
+    
+    The direction is ostensibly the uniformly distributed value.
+    '''
+    v = np.random.normal(0,1,n) # so-called 'v' in Arnoldi
+    return v/np.linalg.norm(u,2) # does this provide uniformly distributed perturbation direction? They say so.
+
+#Appendix E says the following:
+def u_gen_prop(n, Nstar):
+    ''' 
+    Generate random perturbation 'u' such that u_i proportional to N*_i (population-proportional perturbations).
+    '''
+    v = np.random.normal(0,1,2*n).T
+    D = np.diag(Nstar.reshape(2*n))
+    w = np.dot(D,v) # really just pairwise multiplication of Nstar and v
+    u = w/np.linalg.norm(w,2)
+    return u # This is a more suitable perturbation model: Expectation of u_i proportional to N*_i
+
+
+#########################################
+########## STABILITY MEASURES ###########
+#########################################
 def dom_eigvals(A): # for A shape (k,2*n,2*n) ; returns entire eigval (complex, with sign)
     if A.ndim == 2:
         A = A.reshape(1,A.shape[0],A.shape[1])    
