@@ -405,70 +405,7 @@ class ODsystem:
         self.renyi_entropy_s = renyi_entropy(self.s_star, q=2)
         self.D_s = D_1(self.s_star)
         
-        
-# List div_inds_, whichever diversity measures to include in plots (easier to just use idx)
-## How deal with negative space? Leave blank for now? Find way to collapse negative space.
-def OD_stab_div_plot(OD_, div_idx_=list(range(6)), fsize=(7,6), res = 250, fontsize=4, q=2, lowess_frac=None, lowess_col='black', title = '', one_col=None, s_=3, save_as=None, img_type='pdf'):
-    q_renyi=q
-    q_hcdt=q
-    # q_renyi = int(input('q (order of diversity) for Renyi entropy?'))
-    # q_hcdt = int(input('q for HCDT entropy?'))
-    hcdt = hcdt_entropy(s_star, q=q_hcdt)
-    renyi = renyi_entropy(s_star, q=q_renyi)
-
-    xlist = np.array([OD_.simpson_s, OD_.shannon_s, OD_.gini_simp_s, hcdt, renyi, OD_.D_s], dtype=object)
-    xlist = list(xlist[div_idx_])
-    xnames = np.array(['Simpson', 'Shannon', 'Gini-Simpson', r'HCDT, q={}'.format(q_hcdt), 'Renyi, q={}'.format(q_renyi), 'D, Numbers Equivalent'], dtype=object)
-    xnames = list(xnames[div_idx_])
-    ylist = [OD_.R_0, OD_.R_inf, OD_.I_S, OD_.I_D]
-    ynames = [r'$\mathcal{R}_0$', r'$\mathcal{R}_{\infty}$', r'$\mathcal{I}_S$', r'$\mathcal{I}_D$']
-
-    plt.figure(figsize=fsize, dpi=res)
-    plt.style.use('ggplot')
-    mpl.rcParams.update({'font.size': fontsize})
-    thetitle = 'Stability against diversity in resource-competition ($n=${}) \n{}'.format(OD_.n, title)
-    if (one_col==None):
-        # if lowess_frac:
-            # thetitle = thetitle + '\nLOWESS with fraction {}'.format(np.round(lowess_frac,3))
-        plt.suptitle(thetitle);
-
-    colors = ['#648FFF','#785EF0','#DC267F','#FE6100','#FFB000', '#00000f']
-
-    dimx = len(xlist)
-    dimy = len(ylist)
-
-    for i,stab in enumerate(ylist):
-        for j,divind in enumerate(xlist):
-            
-            plt.subplot(dimy, dimx, i*dimx+j+1)
-            if (i!=dimy-1):
-                plt.tick_params('x', which='both', bottom=False, labelbottom=False);
-            if (one_col==None):
-                plt.scatter(divind, stab, s = s_, alpha=0.5, color = colors[j%dimx+len(colors)-2]);
-            else:
-                plt.scatter(divind, stab, s = s_, alpha=0.5, color = one_col);
-            plt.xlim((1,OD_.S_star.shape[1]));
-            if lowess_frac:
-                w = lowess(stab.reshape(-1), divind.reshape(-1), frac=lowess_frac)
-                if j != len(div_idx_)-1:
-                    plt.plot(w[:,0], w[:,1], c=lowess_col, linestyle='dashed', linewidth=0.5, alpha=1.00)
-                else:
-                    if (one_col==None):
-                        plt.plot(w[:,0], w[:,1], c='black', linestyle='dashed', linewidth=0.5, alpha=1.00)
-                    else:
-                        plt.plot(w[:,0], w[:,1], c=lowess_col, linestyle='dashed', linewidth=0.5, alpha=1.00)
-            if j%dimx == 0:
-                plt.ylabel(ynames[i]);
-            if i == dimy-1:
-                plt.xlabel(xnames[j]);
-
-    
-    plt.tight_layout();
-    
-    if (save_as != None):
-        plt.savefig(save_as+'.{}'.format(img_type), format=img_type)
-        
-        
+                
         
         
 
