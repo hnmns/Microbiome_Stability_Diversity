@@ -71,7 +71,7 @@ def numbers_equiv_alpha(w,p,q):
     '''
     There are C communities and S species.
     
-    Takes community weights w (vector of length C), species probabilities p of size (S,C), and order q of the diversity index.
+    Takes community weights w (vector of length C), species probabilities p with shape (S,C), and order q of the diversity index.
     Returns numbers equivalent of diversity index's alpha component.
     '''
     w = w.reshape(p.shape[0],1)
